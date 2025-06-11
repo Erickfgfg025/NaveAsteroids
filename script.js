@@ -1,20 +1,21 @@
 const canvas = document.getElementById("meuCanvas");
 const ctx = canvas.getContext("2d");
 
-let x=100
-let y=100
-let largura = 30
-let altura = 24
-let velocidade = 2
-let cima = false
-let left = false
-let right = false
-let baixo = false
+let x=100;
+let y=100;
+let largura = 30;
+let altura = 24;
+let velocidade = 4;
+let cima = false;
+let left = false;
+let right = false;
+let baixo = false;
+let gameOver = false;  //encerrar o jogo
 canvas.width = window.innerWidth;
 canvas.height =  window.innerHeight;
 
 //carrega a imagem da nave
-const nave = new Image();
+const nave = new Image();                     
 nave.src="/imagens/nave.png";
 
 //carrega a imagem de asterois
@@ -24,7 +25,9 @@ imageAsteroids.src = "/imagens/asteroids.png";
 const asteroids = [];
 const tiros = [];
 
-
+//carrega os audios
+trilha = new Audio("/sons/trilha-sonora.mp3"); 
+trilhaTocando = false;
 
 //ctx.fillStyle="white";
 //ctx.fillRect(x,y,largura,altura);
@@ -66,14 +69,26 @@ document.addEventListener("keyup",function(event){
 });
 
 function colidiu(a, b) {
+    
     return a.x < b.x + b.largura &&
            a.x + a.largura > b.x &&
            a.y < b.y + b.altura &&
            a.y + a.altura > b.y;
+    
+}
+
+function colisaoNave(a){
+    return ( a.x < x + largura &&
+           a.x + a.largura > x &&
+           a.y < y + altura &&
+           a.y + a.altura > y
+    )
+
 }
 
 function draw() {
     
+    trilhaSonora()
     ctx.clearRect(0,0,canvas.width,canvas.height);
     //ctx.fillStyle="white";
     //ctx.fillRect(x,y,largura,altura);
@@ -110,12 +125,17 @@ function draw() {
             asteroids.splice(j, 1);
             j--;
         }
+         if (colisaoNave(a)) {
+                gameOver  = true;
+
+        } 
     }
 
     for (let i=0; i<tiros.length; i++){
         const t = tiros[i];
         t.y -= t.speed;
 
+        //SE COLIDIR COM ASTEROIDS SOME O TIRO
         if (t.y + t.altura < 0) {
         tiros.splice(i, 1);
         i--;
@@ -125,23 +145,34 @@ function draw() {
         for (let j = 0; j < asteroids.length; j++) {
             const a = asteroids[j];
             if (colidiu(t, a)) {
+                
                 tiros.splice(i, 1);
                 asteroids.splice(j, 1);
                 i--;
                 break;
             }
+           
         }
 
         ctx.fillStyle = "white";
         ctx.fillRect(t.x,t.y,t.largura,t.altura);
                   
+    
 
 
+    }
+    if (gameOver) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "red";
+        ctx.font = "48px Arial";
+        ctx.fillText("GAME OVER", canvas.width / 2 - 140, canvas.height / 2);
+        trilha.pause(); // pausa a trilha sonora
+        return; // não continua o loop
 
     }
     
 
-    requestAnimationFrame(draw);
+    window.requestAnimationFrame(draw);
 
 }
 
@@ -167,13 +198,29 @@ function atirar() {
         altura: 10
 
     }
-
+    const somTiro = new Audio("/sons/tiro.mp3");  
+    somTiro.currentTime = 0;
+    somTiro.play();
     tiros.push(tiro)
 
    
 }
 
+function trilhaSonora() {
+    if (!trilhaTocando) {
+        trilha.loop=true;
+        trilha.volume=0.5;
+        trilha.currentTime = 0;
+        trilha.play();
+        trilhaTocando = true;
+
+    }
+   
+
+}
+
 nave.onload = function(){
+    
     requestAnimationFrame(draw);
     setInterval(criarAsteroids, 1500);
 
@@ -181,4 +228,3 @@ nave.onload = function(){
 
 
 draw();
-
